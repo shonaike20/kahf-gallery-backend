@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>KAHF ADMIN</title>
+
+  <style>
+    :root {
+      --bg: #f4efe9;        /* beige / nude */
+      --card: #ffffff;
+      --text: #2f2f2f;
+      --muted: #7a7a7a;
+      --accent: #b89b7c;
+      --border: #e2d9cf;
+    }
+
+    * {
+      box-sizing: border-box;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 520px;
+      margin-top: 60px;
+      padding: 32px;
+      background: var(--card);
+      border-radius: 12px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.06);
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+
+    .logo-placeholder {
+      width: 96px;
+      height: 96px;
+      margin: 0 auto 16px;
+      border: 2px dashed var(--border);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    h1 {
+      margin: 0;
+      letter-spacing: 2px;
+      font-size: 22px;
+      font-weight: 600;
+    }
+
+    .subtitle {
+      margin-top: 6px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    input[type="file"] {
+      padding: 10px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #fafafa;
+    }
+
+    input[type="text"],
+    textarea {
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 14px;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    button {
+      margin-top: 8px;
+      padding: 12px;
+      border: none;
+      border-radius: 10px;
+      background: var(--accent);
+      color: white;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    button:hover {
+      background: #a88b6c;
+    }
+
+    #status {
+      margin-top: 16px;
+      font-size: 13px;
+      text-align: center;
+      color: var(--muted);
+    }
+      .logo-placeholder img {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+}
+  </style>
+</head>
+
+<body>
+<div class="container">
+
+    <div class="header">
+        <div class="logo-placeholder">
+            <img src="/static/kahf-logo.png" alt="KAHF Logo">
+        </div>
+        <h1>KAHF ADMIN</h1>
+        <div class="subtitle">Gallery upload console</div>
+    </div>
+    <label style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+        <input type="checkbox" id="bulkToggle"/>
+        <strong>Bulk Upload Mode</strong>
+    </label>
+    <form id="uploadForm">
+        <input
+                type="file"
+                id="imageInput"
+                name="images"
+                required
+        />
+        <input
+                type="text"
+                id="baseName"
+                name="base_name"
+                placeholder="Base name (optional)"
+                style="display:none"
+        />
+
+        <small id="baseHint" style="display:none;color:#7a7a7a;">
+            If empty, base name is generated from author + series + date.
+        </small>
+
+        <input
+                type="text"
+                name="image_name"
+                placeholder="Image name"
+                required
+        />
+
+        <input
+                type="text"
+                name="series_name"
+                placeholder="Series (optional)"
+        />
+
+        <input
+        type="text"
+        name="author"
+        placeholder="Author (optional)"
+      />
+
+      <textarea
+        name="description"
+        placeholder="Description (optional)"
+      ></textarea>
+
+      <button type="submit">Upload Image</button>
+    </form>
+
+    <p id="status"></p>
+
+  </div>
+
+ <script>
+  const uploadForm = document.getElementById("uploadForm");
+  const bulkToggle = document.getElementById("bulkToggle");
+  const imageInput = document.getElementById("imageInput");
+  const baseNameInput = document.getElementById("baseName");
+  const baseHint = document.getElementById("baseHint");
+  const statusEl = document.getElementById("status");
+
+  // Toggle behavior
+  bulkToggle.onchange = () => {
+    if (bulkToggle.checked) {
+      imageInput.multiple = true;
+      baseNameInput.style.display = "block";
+      baseHint.style.display = "block";
+      statusEl.innerText = "Bulk mode enabled: select multiple images.";
+    } else {
+      imageInput.multiple = false;
+      baseNameInput.style.display = "none";
+      baseHint.style.display = "none";
+      statusEl.innerText = "";
+    }
+  };
+
+  // Submit behavior
+  uploadForm.onsubmit = async (e) => {
+    e.preventDefault();
+
+    const isBulk = bulkToggle.checked;
+    const formData = new FormData();
+
+    // Append files explicitly (works reliably for single and bulk)
+    const files = imageInput.files;
+    if (!files || files.length === 0) {
+      statusEl.innerText = "Please select at least one image.";
+      return;
+    }
+
+    if (isBulk) {
+      for (const file of files) {
+        formData.append("images", file);
+      }
+      // optional base name
+      if (baseNameInput.value && baseNameInput.value.trim().length > 0) {
+        formData.append("base_name", baseNameInput.value.trim());
+      }
+    } else {
+      // Single mode: backend expects field name "image"
+      formData.append("image", files[0]);
+    }
+
+    // Append shared fields (both modes)
+    const imageName = uploadForm.querySelector('input[name="image_name"]')?.value?.trim();
+    const seriesName = uploadForm.querySelector('input[name="series_name"]')?.value?.trim();
+    const author = uploadForm.querySelector('input[name="author"]')?.value?.trim();
+    const description = uploadForm.querySelector('textarea[name="description"]')?.value?.trim();
+
+    // In single mode, image_name is required
+    if (!isBulk) {
+      if (!imageName) {
+        statusEl.innerText = "Image name is required in single upload mode.";
+        return;
+      }
+      formData.append("image_name", imageName);
+    } else {
+      // In bulk mode, image_name is not used; base_name is used instead (optional)
+      // series/author are still useful for deriving base name if base_name is empty
+    }
+
+    if (seriesName) formData.append("series_name", seriesName);
+    if (author) formData.append("author", author);
+    if (description) formData.append("description", description);
+
+    const endpoint = isBulk ? "/api/images/bulk" : "/api/images";
+
+    statusEl.innerText = "Uploading...";
+
+    const res = await fetch(endpoint, {
+      method: "POST",
+      body: formData
+    });
+
+    let json;
+    try {
+      json = await res.json();
+    } catch {
+      statusEl.innerText = "Upload failed: invalid server response.";
+      return;
+    }
+
+    if (!res.ok) {
+      statusEl.innerText = "Upload failed: " + (json.detail || "Unknown error");
+      return;
+    }
+
+    statusEl.innerText = isBulk
+      ? `Uploaded ${json.count} images. Base name: ${json.base_name}`
+      : `Uploaded successfully (ID ${json.id})`;
+
+    uploadForm.reset();
+    // keep bulk toggle state, but reset input behavior accordingly
+    bulkToggle.onchange();
+  };
+</script>
+
+</body>
+</html>
