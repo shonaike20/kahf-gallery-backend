@@ -6,7 +6,7 @@
 
   <style>
     :root {
-      --bg: #f4efe9;        /* beige / nude */
+      --bg: #f4efe9;
       --card: #ffffff;
       --text: #2f2f2f;
       --muted: #7a7a7a;
@@ -21,278 +21,425 @@
 
     body {
       margin: 0;
-      padding: 0;
       background: var(--bg);
-      color: var(--text);
       display: flex;
       justify-content: center;
-      align-items: flex-start;
-      min-height: 100vh;
+      padding: 40px 0;
     }
 
     .container {
       width: 100%;
-      max-width: 520px;
-      margin-top: 60px;
-      padding: 32px;
+      max-width: 1000px;
       background: var(--card);
+      padding: 28px;
       border-radius: 12px;
-      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.06);
+      box-shadow: 0 8px 30px rgba(0,0,0,0.06);
     }
 
     .header {
       text-align: center;
-      margin-bottom: 28px;
+      margin-bottom: 20px;
     }
 
-    .logo-placeholder {
-      width: 96px;
-      height: 96px;
-      margin: 0 auto 16px;
-      border: 2px dashed var(--border);
-      border-radius: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: var(--muted);
-      font-size: 12px;
+    .logo {
+      width: 72px;
+      height: 72px;
+      margin: 0 auto 12px;
+    }
+
+    .logo img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
     }
 
     h1 {
       margin: 0;
       letter-spacing: 2px;
       font-size: 22px;
-      font-weight: 600;
     }
 
     .subtitle {
-      margin-top: 6px;
       font-size: 13px;
       color: var(--muted);
     }
+
+    .mode-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    button {
+      padding: 8px 14px;
+      border: none;
+      border-radius: 8px;
+      background: var(--accent);
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 13px;
+    }
+
+    button.secondary {
+      background: #d6c5b1;
+    }
+
+    button:hover {
+      opacity: 0.9;
+    }
+
+    /* ---------- UPLOAD ---------- */
 
     form {
       display: flex;
       flex-direction: column;
-      gap: 14px;
+      gap: 12px;
+      margin-top: 20px;
     }
 
-    input[type="file"] {
-      padding: 10px;
+    input, textarea {
+      padding: 8px 10px;
       border: 1px solid var(--border);
-      border-radius: 8px;
-      background: #fafafa;
-    }
-
-    input[type="text"],
-    textarea {
-      padding: 10px 12px;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      font-size: 14px;
+      border-radius: 6px;
+      font-size: 13px;
     }
 
     textarea {
       resize: vertical;
-      min-height: 80px;
-    }
-
-    button {
-      margin-top: 8px;
-      padding: 12px;
-      border: none;
-      border-radius: 10px;
-      background: var(--accent);
-      color: white;
-      font-size: 14px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background 0.2s ease;
-    }
-
-    button:hover {
-      background: #a88b6c;
+      min-height: 70px;
     }
 
     #status {
-      margin-top: 16px;
+      margin-top: 12px;
       font-size: 13px;
+      color: var(--muted);
       text-align: center;
+    }
+
+    /* ---------- PREVIEW ---------- */
+
+    .preview-box {
+      width: 100%;
+      height: 380px;               /* 🔒 LOCKED HEIGHT */
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 16px;
+      background: #faf7f3;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .preview-box img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      border-radius: 6px;
+    }
+
+    .preview-placeholder {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    /* ---------- TABLE ---------- */
+
+    .table-container {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin-top: 20px;
+      overflow: hidden;
+    }
+
+    .table-header,
+    .table-row {
+      display: grid;
+      grid-template-columns: 50px 1.2fr 1fr 1fr 1.6fr 120px;
+      align-items: center;
+      padding: 8px 10px;
+      gap: 8px;
+    }
+
+    .table-header {
+      background: #faf7f3;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .table-row {
+      border-bottom: 1px solid var(--border);
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .table-row:last-child {
+      border-bottom: none;
+    }
+
+    .table-row input {
+      width: 100%;
+      padding: 6px 8px;
+      font-size: 12px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+    }
+
+    .thumb {
+      width: 28px;
+      height: 28px;
+      object-fit: cover;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+    }
+
+    .row-actions {
+      display: flex;
+      gap: 6px;
+    }
+
+    .row-actions button {
+      font-size: 11px;
+      padding: 6px 8px;
+    }
+
+    /* ---------- PAGINATION ---------- */
+
+    .pagination {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 14px;
+      font-size: 13px;
       color: var(--muted);
     }
-      .logo-placeholder img {
-        max-width: 100%;
-        max-height: 100%;
-        object-fit: contain;
-}
   </style>
 </head>
 
 <body>
 <div class="container">
 
-    <div class="header">
-        <div class="logo-placeholder">
-            <img src="/static/kahf-logo.png" alt="KAHF Logo">
-        </div>
-        <h1>KAHF ADMIN</h1>
-        <div class="subtitle">Gallery upload console</div>
+  <div class="header">
+    <div class="logo">
+      <img src="/static/kahf-logo.png" alt="KAHF Logo">
     </div>
-    <label style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
-        <input type="checkbox" id="bulkToggle"/>
-        <strong>Bulk Upload Mode</strong>
+    <h1>KAHF ADMIN</h1>
+    <div class="subtitle">Gallery admin console</div>
+
+    <div class="mode-buttons">
+      <button class="secondary" id="uploadBtn">Upload</button>
+      <button class="secondary" id="viewBtn">View Images</button>
+    </div>
+  </div>
+
+  <!-- UPLOAD SECTION -->
+  <div id="uploadSection">
+    <label style="display:flex;align-items:center;gap:8px;">
+      <input type="checkbox" id="bulkToggle">
+      <strong>Bulk Upload Mode</strong>
     </label>
+
     <form id="uploadForm">
-        <input
-                type="file"
-                id="imageInput"
-                name="images"
-                required
-        />
-        <input
-                type="text"
-                id="baseName"
-                name="base_name"
-                placeholder="Base name (optional)"
-                style="display:none"
-        />
+      <input type="file" id="imageInput" required>
 
-        <small id="baseHint" style="display:none;color:#7a7a7a;">
-            If empty, base name is generated from author + series + date.
-        </small>
+      <input type="text" id="baseName" placeholder="Base name (optional)" style="display:none">
 
-        <input
-                type="text"
-                name="image_name"
-                placeholder="Image name"
-                required
-        />
+      <small id="baseHint" style="display:none;color:#7a7a7a;">
+        If empty, base name is derived from author + series + date.
+      </small>
 
-        <input
-                type="text"
-                name="series_name"
-                placeholder="Series (optional)"
-        />
+      <input type="text" id="imageNameInput" placeholder="Image name">
+      <input type="text" name="series_name" placeholder="Series (optional)">
+      <input type="text" name="author" placeholder="Author (optional)">
+      <textarea name="description" placeholder="Description (optional)"></textarea>
 
-        <input
-        type="text"
-        name="author"
-        placeholder="Author (optional)"
-      />
-
-      <textarea
-        name="description"
-        placeholder="Description (optional)"
-      ></textarea>
-
-      <button type="submit">Upload Image</button>
+      <button type="submit">Upload</button>
     </form>
 
     <p id="status"></p>
-
   </div>
 
- <script>
-  const uploadForm = document.getElementById("uploadForm");
+  <!-- VIEW SECTION -->
+  <div id="viewSection" style="display:none;">
+
+    <div class="preview-box">
+      <span id="previewPlaceholder" class="preview-placeholder">
+        Hover over a row to preview image
+      </span>
+      <img id="previewImage" src="" style="display:none">
+    </div>
+
+    <div class="table-container">
+      <div class="table-header">
+        <div>Img</div>
+        <div>Name</div>
+        <div>Series</div>
+        <div>Author</div>
+        <div>Description</div>
+        <div>Actions</div>
+      </div>
+      <div id="tableBody"></div>
+    </div>
+
+    <div class="pagination">
+      <button id="prevBtn">Prev</button>
+      <span id="pageInfo"></span>
+      <button id="nextBtn">Next</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const PAGE_SIZE = 20;
+  let images = [];
+  let page = 0;
+
+  const uploadSection = document.getElementById("uploadSection");
+  const viewSection = document.getElementById("viewSection");
+  const uploadBtn = document.getElementById("uploadBtn");
+  const viewBtn = document.getElementById("viewBtn");
+
+  uploadBtn.onclick = () => {
+    uploadSection.style.display = "block";
+    viewSection.style.display = "none";
+  };
+
+  viewBtn.onclick = () => {
+    uploadSection.style.display = "none";
+    viewSection.style.display = "block";
+    loadImages();
+  };
+
+  // BULK TOGGLE
   const bulkToggle = document.getElementById("bulkToggle");
   const imageInput = document.getElementById("imageInput");
+  const imageNameInput = document.getElementById("imageNameInput");
   const baseNameInput = document.getElementById("baseName");
   const baseHint = document.getElementById("baseHint");
   const statusEl = document.getElementById("status");
 
-  // Toggle behavior
   bulkToggle.onchange = () => {
     if (bulkToggle.checked) {
       imageInput.multiple = true;
+      imageNameInput.disabled = true;
       baseNameInput.style.display = "block";
       baseHint.style.display = "block";
-      statusEl.innerText = "Bulk mode enabled: select multiple images.";
     } else {
       imageInput.multiple = false;
+      imageNameInput.disabled = false;
       baseNameInput.style.display = "none";
       baseHint.style.display = "none";
-      statusEl.innerText = "";
     }
   };
 
-  // Submit behavior
-  uploadForm.onsubmit = async (e) => {
+  // UPLOAD
+  document.getElementById("uploadForm").onsubmit = async (e) => {
     e.preventDefault();
-
     const isBulk = bulkToggle.checked;
-    const formData = new FormData();
-
-    // Append files explicitly (works reliably for single and bulk)
-    const files = imageInput.files;
-    if (!files || files.length === 0) {
-      statusEl.innerText = "Please select at least one image.";
-      return;
-    }
+    const fd = new FormData();
 
     if (isBulk) {
-      for (const file of files) {
-        formData.append("images", file);
-      }
-      // optional base name
-      if (baseNameInput.value && baseNameInput.value.trim().length > 0) {
-        formData.append("base_name", baseNameInput.value.trim());
-      }
+      for (const f of imageInput.files) fd.append("images", f);
+      if (baseNameInput.value.trim()) fd.append("base_name", baseNameInput.value.trim());
     } else {
-      // Single mode: backend expects field name "image"
-      formData.append("image", files[0]);
+      fd.append("image", imageInput.files[0]);
+      fd.append("image_name", imageNameInput.value.trim());
     }
 
-    // Append shared fields (both modes)
-    const imageName = uploadForm.querySelector('input[name="image_name"]')?.value?.trim();
-    const seriesName = uploadForm.querySelector('input[name="series_name"]')?.value?.trim();
-    const author = uploadForm.querySelector('input[name="author"]')?.value?.trim();
-    const description = uploadForm.querySelector('textarea[name="description"]')?.value?.trim();
-
-    // In single mode, image_name is required
-    if (!isBulk) {
-      if (!imageName) {
-        statusEl.innerText = "Image name is required in single upload mode.";
-        return;
-      }
-      formData.append("image_name", imageName);
-    } else {
-      // In bulk mode, image_name is not used; base_name is used instead (optional)
-      // series/author are still useful for deriving base name if base_name is empty
-    }
-
-    if (seriesName) formData.append("series_name", seriesName);
-    if (author) formData.append("author", author);
-    if (description) formData.append("description", description);
-
-    const endpoint = isBulk ? "/api/images/bulk" : "/api/images";
-
-    statusEl.innerText = "Uploading...";
-
-    const res = await fetch(endpoint, {
-      method: "POST",
-      body: formData
+    ["series_name", "author", "description"].forEach(n => {
+      const el = e.target.querySelector(`[name="${n}"]`);
+      if (el && el.value.trim()) fd.append(n, el.value.trim());
     });
 
-    let json;
-    try {
-      json = await res.json();
-    } catch {
-      statusEl.innerText = "Upload failed: invalid server response.";
-      return;
-    }
+    const endpoint = isBulk ? "/api/images/bulk" : "/api/images";
+    statusEl.innerText = "Uploading...";
 
-    if (!res.ok) {
-      statusEl.innerText = "Upload failed: " + (json.detail || "Unknown error");
-      return;
-    }
+    const res = await fetch(endpoint, { method: "POST", body: fd });
+    const json = await res.json();
 
-    statusEl.innerText = isBulk
-      ? `Uploaded ${json.count} images. Base name: ${json.base_name}`
-      : `Uploaded successfully (ID ${json.id})`;
+    statusEl.innerText = res.ok
+      ? (isBulk ? `Uploaded ${json.count} images` : `Uploaded image ID ${json.id}`)
+      : (json.detail || "Upload failed");
 
-    uploadForm.reset();
-    // keep bulk toggle state, but reset input behavior accordingly
+    e.target.reset();
     bulkToggle.onchange();
+  };
+
+  // TABLE VIEW
+  async function loadImages() {
+    const res = await fetch("/api/images");
+    images = await res.json();
+    page = 0;
+    renderPage();
+  }
+
+  function renderPage() {
+    const body = document.getElementById("tableBody");
+    const previewImage = document.getElementById("previewImage");
+    const previewPlaceholder = document.getElementById("previewPlaceholder");
+
+    body.innerHTML = "";
+    previewImage.style.display = "none";
+    previewPlaceholder.style.display = "block";
+
+    images.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE).forEach(img => {
+      const row = document.createElement("div");
+      row.className = "table-row";
+
+      row.innerHTML = `
+        <img class="thumb" src="/api/images/${img.id}/data">
+        <input value="${img.image_name || ""}" data-field="image_name">
+        <input value="${img.series_name || ""}" data-field="series_name">
+        <input value="${img.author || ""}" data-field="author">
+        <input value="${img.description || ""}" data-field="description">
+        <div class="row-actions">
+          <button data-save>Save</button>
+          <button data-delete>Delete</button>
+        </div>
+      `;
+
+      row.onmouseenter = () => {
+        previewImage.src = `/api/images/${img.id}/data`;
+        previewImage.style.display = "block";
+        previewPlaceholder.style.display = "none";
+      };
+
+      row.querySelector("[data-save]").onclick = async (e) => {
+        e.stopPropagation();
+        const fd = new FormData();
+        row.querySelectorAll("input").forEach(i => fd.append(i.dataset.field, i.value));
+        await fetch(`/api/images/${img.id}`, { method: "PUT", body: fd });
+      };
+
+      row.querySelector("[data-delete]").onclick = async (e) => {
+        e.stopPropagation();
+        if (!confirm("Delete image?")) return;
+        await fetch(`/api/images/${img.id}`, { method: "DELETE" });
+        images = images.filter(i => i.id !== img.id);
+        renderPage();
+      };
+
+      body.appendChild(row);
+    });
+
+    document.getElementById("pageInfo").innerText =
+      `Page ${page + 1} of ${Math.max(Math.ceil(images.length / PAGE_SIZE), 1)}`;
+  }
+
+  document.getElementById("prevBtn").onclick = () => {
+    if (page > 0) { page--; renderPage(); }
+  };
+
+  document.getElementById("nextBtn").onclick = () => {
+    if ((page + 1) * PAGE_SIZE < images.length) {
+      page++;
+      renderPage();
+    }
   };
 </script>
 

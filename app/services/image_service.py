@@ -57,7 +57,6 @@ def get_image_data(db, image_id):
         io.BytesIO(img.image_data),
         media_type="image/jpeg"
     )
-import random
 
 def random_images(db, limit=30):
     images = db.query(Image).all()
@@ -124,3 +123,42 @@ async def create_images_bulk(
         "base_name": base_name,
         "images": created_names
     }
+
+def delete_image(db, image_id):
+    img = db.query(Image).filter(Image.id == image_id).first()
+
+    if not img:
+        raise HTTPException(status_code=404, detail="Image not found")
+
+    db.delete(img)
+    db.commit()
+
+    return {"deleted": image_id}
+
+def update_image_metadata(
+    db,
+    image_id,
+    image_name=None,
+    series_name=None,
+    author=None,
+    description=None
+):
+    img = db.query(Image).filter(Image.id == image_id).first()
+
+    if not img:
+        raise HTTPException(status_code=404, detail="Image not found")
+
+    if image_name is not None:
+        img.image_name = image_name
+    if series_name is not None:
+        img.series_name = series_name
+    if author is not None:
+        img.author = author
+    if description is not None:
+        img.description = description
+
+    db.commit()
+
+    return {"updated": image_id}
+
+
