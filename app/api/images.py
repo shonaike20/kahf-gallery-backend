@@ -28,11 +28,11 @@ async def upload_image(
     )
 
 
-@router.get("/")
+@router.get("")
 def fetch_images(
     #optional filter by series
     series_name: str | None = None,
-    limit: int = 30,
+    limit: int | None = None,
     offset: int = 0,
     db: Session = Depends(get_db)
 ):

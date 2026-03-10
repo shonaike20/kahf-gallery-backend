@@ -27,13 +27,19 @@ async def create_image(db, image, image_name, series, author, description):
     return {"id": img.id}
 
 
-def list_images(db, series_name = None, limit=30, offset=0):
+def list_images(db, series_name = None, limit=None, offset=0):
     query = db.query(Image)
 
     if series_name:
         query = query.filter(Image.series_name == series_name)
 
-    images = query.offset(offset).limit(limit).all()
+    query = query.offset(offset)
+
+    if limit is not None:
+        query = query.limit(limit)
+
+    images = query.all()
+    return images
 
 
     return [
