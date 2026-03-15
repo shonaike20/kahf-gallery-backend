@@ -2,9 +2,9 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
 #prod db toggle
-# DATABASE_URL = "sqlite:////data/gallery.db"
+DATABASE_URL = "sqlite:////data/gallery.db"
 
-DATABASE_URL = "sqlite:///./gallery.db"
+# DATABASE_URL = "sqlite:///./gallery.db"
 
 engine = create_engine(
     DATABASE_URL,

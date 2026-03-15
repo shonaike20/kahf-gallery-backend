@@ -7,6 +7,7 @@ class Image(Base):
     id = Column(Integer, primary_key=True, index=True)
     image_name = Column(String, nullable=False)
     image_data = Column(LargeBinary, nullable=False)
-    series_name = Column(String)
-    author = Column(String)
-    description = Column(Text)
+    thumbnail_data = Column(LargeBinary, nullable=True)  # <- add this
+    series_name = Column(String, nullable=True)
+    author = Column(String, nullable=True)
+    description = Column(Text, nullable=True)

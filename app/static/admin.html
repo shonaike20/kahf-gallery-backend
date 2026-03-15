@@ -12,6 +12,7 @@
       --muted: #7a7a7a;
       --accent: #b89b7c;
       --border: #e2d9cf;
+      --danger: #b14d4d;
     }
 
     * {
@@ -86,11 +87,18 @@
       background: #d6c5b1;
     }
 
+    button.danger {
+      background: var(--danger);
+    }
+
     button:hover {
       opacity: 0.9;
     }
 
-    /* ---------- UPLOAD ---------- */
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
 
     form {
       display: flex;
@@ -111,18 +119,25 @@
       min-height: 70px;
     }
 
-    #status {
+    #status,
+    #viewStatus {
       margin-top: 12px;
       font-size: 13px;
       color: var(--muted);
       text-align: center;
     }
 
-    /* ---------- PREVIEW ---------- */
+    .view-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+      gap: 10px;
+    }
 
     .preview-box {
       width: 100%;
-      height: 380px;               /* 🔒 LOCKED HEIGHT */
+      height: 380px;
       border: 1px solid var(--border);
       border-radius: 8px;
       padding: 12px;
@@ -144,8 +159,6 @@
       color: var(--muted);
       font-size: 13px;
     }
-
-    /* ---------- TABLE ---------- */
 
     .table-container {
       border: 1px solid var(--border);
@@ -207,8 +220,6 @@
       padding: 6px 8px;
     }
 
-    /* ---------- PAGINATION ---------- */
-
     .pagination {
       display: flex;
       justify-content: space-between;
@@ -233,12 +244,14 @@
     <div class="mode-buttons">
       <button class="secondary" id="uploadBtn">Upload</button>
       <button class="secondary" id="viewBtn">View Images</button>
+      <form method="POST" action="/logout" style="display:inline;margin:0;flex-direction:unset;">
+        <button type="submit" class="secondary">Logout</button>
+      </form>
     </div>
   </div>
 
-  <!-- UPLOAD SECTION -->
   <div id="uploadSection">
-    <label style="display:flex;align-items:center;gap:8px;">
+    <label style="display:flex;align-items:center;gap:8px;margin-top:20px;">
       <input type="checkbox" id="bulkToggle">
       <strong>Bulk Upload Mode</strong>
     </label>
@@ -247,7 +260,6 @@
       <input type="file" id="imageInput" required>
 
       <input type="text" id="baseName" placeholder="Base name (optional)" style="display:none">
-
       <small id="baseHint" style="display:none;color:#7a7a7a;">
         If empty, base name is derived from author + series + date.
       </small>
@@ -263,14 +275,18 @@
     <p id="status"></p>
   </div>
 
-  <!-- VIEW SECTION -->
   <div id="viewSection" style="display:none;">
+
+    <div class="view-actions">
+      <span id="viewStatus"></span>
+      <button id="deleteAllBtn" class="danger">Delete All Images</button>
+    </div>
 
     <div class="preview-box">
       <span id="previewPlaceholder" class="preview-placeholder">
         Hover over a row to preview image
       </span>
-      <img id="previewImage" src="" style="display:none">
+      <img id="previewImage" src="" style="display:none" alt="Preview image">
     </div>
 
     <div class="table-container">
@@ -298,60 +314,80 @@
   const PAGE_SIZE = 20;
   let images = [];
   let page = 0;
+  let hasMore = false;
 
   const uploadSection = document.getElementById("uploadSection");
-  const viewSection = document.getElementById("viewSection");
-  const uploadBtn = document.getElementById("uploadBtn");
-  const viewBtn = document.getElementById("viewBtn");
+  const viewSection   = document.getElementById("viewSection");
+  const uploadBtn     = document.getElementById("uploadBtn");
+  const viewBtn       = document.getElementById("viewBtn");
+  const bulkToggle    = document.getElementById("bulkToggle");
+  const imageInput    = document.getElementById("imageInput");
+  const imageNameInput = document.getElementById("imageNameInput");
+  const baseNameInput = document.getElementById("baseName");
+  const baseHint      = document.getElementById("baseHint");
+  const statusEl      = document.getElementById("status");
+  const viewStatusEl  = document.getElementById("viewStatus");
+  const deleteAllBtn  = document.getElementById("deleteAllBtn");
+
+  // ── Nav ──────────────────────────────────────────────────────────────────
 
   uploadBtn.onclick = () => {
     uploadSection.style.display = "block";
-    viewSection.style.display = "none";
+    viewSection.style.display   = "none";
   };
 
   viewBtn.onclick = () => {
     uploadSection.style.display = "none";
-    viewSection.style.display = "block";
+    viewSection.style.display   = "block";
     loadImages();
   };
 
-  // BULK TOGGLE
-  const bulkToggle = document.getElementById("bulkToggle");
-  const imageInput = document.getElementById("imageInput");
-  const imageNameInput = document.getElementById("imageNameInput");
-  const baseNameInput = document.getElementById("baseName");
-  const baseHint = document.getElementById("baseHint");
-  const statusEl = document.getElementById("status");
+  // ── Bulk toggle ──────────────────────────────────────────────────────────
 
   bulkToggle.onchange = () => {
     if (bulkToggle.checked) {
-      imageInput.multiple = true;
-      imageNameInput.disabled = true;
+      imageInput.multiple        = true;
+      imageNameInput.disabled    = true;
+      imageNameInput.required    = false;
       baseNameInput.style.display = "block";
-      baseHint.style.display = "block";
+      baseHint.style.display      = "block";
     } else {
-      imageInput.multiple = false;
-      imageNameInput.disabled = false;
+      imageInput.multiple        = false;
+      imageNameInput.disabled    = false;
+      imageNameInput.required    = true;
       baseNameInput.style.display = "none";
-      baseHint.style.display = "none";
+      baseHint.style.display      = "none";
     }
   };
 
-  // UPLOAD
+  bulkToggle.onchange();
+
+  // ── Upload form ──────────────────────────────────────────────────────────
+
   document.getElementById("uploadForm").onsubmit = async (e) => {
     e.preventDefault();
+
     const isBulk = bulkToggle.checked;
     const fd = new FormData();
+
+    if (!imageInput.files || imageInput.files.length === 0) {
+      statusEl.innerText = "Please choose at least one image.";
+      return;
+    }
 
     if (isBulk) {
       for (const f of imageInput.files) fd.append("images", f);
       if (baseNameInput.value.trim()) fd.append("base_name", baseNameInput.value.trim());
     } else {
+      if (!imageNameInput.value.trim()) {
+        statusEl.innerText = "Image name is required.";
+        return;
+      }
       fd.append("image", imageInput.files[0]);
       fd.append("image_name", imageNameInput.value.trim());
     }
 
-    ["series_name", "author", "description"].forEach(n => {
+    ["series_name", "author", "description"].forEach((n) => {
       const el = e.target.querySelector(`[name="${n}"]`);
       if (el && el.value.trim()) fd.append(n, el.value.trim());
     });
@@ -359,88 +395,178 @@
     const endpoint = isBulk ? "/api/images/bulk" : "/api/images";
     statusEl.innerText = "Uploading...";
 
-    const res = await fetch(endpoint, { method: "POST", body: fd });
-    const json = await res.json();
+    try {
+      const res  = await fetch(endpoint, { method: "POST", body: fd });
+      const json = await res.json();
 
-    statusEl.innerText = res.ok
-      ? (isBulk ? `Uploaded ${json.count} images` : `Uploaded image ID ${json.id}`)
-      : (json.detail || "Upload failed");
+      statusEl.innerText = res.ok
+        ? (isBulk ? `Uploaded ${json.count} images` : `Uploaded image ID ${json.id}`)
+        : (json.detail || "Upload failed");
 
-    e.target.reset();
-    bulkToggle.onchange();
+      if (res.ok) {
+        e.target.reset();
+        bulkToggle.checked = false;
+        bulkToggle.onchange();
+      }
+    } catch {
+      statusEl.innerText = "Upload request failed.";
+    }
   };
 
-  // TABLE VIEW
+  // ── Load images ──────────────────────────────────────────────────────────
+
   async function loadImages() {
-    const res = await fetch("/api/images");
-    images = await res.json();
-    page = 0;
-    renderPage();
+    viewStatusEl.innerText = "Loading images...";
+
+    try {
+      const offset = page * PAGE_SIZE;
+      const res    = await fetch(`/api/images?limit=${PAGE_SIZE}&offset=${offset}`);
+      const json   = await res.json();
+
+      if (!res.ok) {
+        viewStatusEl.innerText = json.detail || "Failed to load images";
+        return;
+      }
+
+      images  = json.items || [];
+      hasMore = json.has_more || false;
+      viewStatusEl.innerText = "";
+      renderPage();
+    } catch {
+      viewStatusEl.innerText = "Failed to load images";
+    }
   }
 
+  // ── Render page ──────────────────────────────────────────────────────────
+
   function renderPage() {
-    const body = document.getElementById("tableBody");
-    const previewImage = document.getElementById("previewImage");
+    const body               = document.getElementById("tableBody");
+    const previewImage       = document.getElementById("previewImage");
     const previewPlaceholder = document.getElementById("previewPlaceholder");
 
     body.innerHTML = "";
-    previewImage.style.display = "none";
+    previewImage.style.display       = "none";
     previewPlaceholder.style.display = "block";
 
-    images.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE).forEach(img => {
+    images.forEach((img) => {
       const row = document.createElement("div");
       row.className = "table-row";
 
       row.innerHTML = `
-        <img class="thumb" src="/api/images/${img.id}/data">
-        <input value="${img.image_name || ""}" data-field="image_name">
-        <input value="${img.series_name || ""}" data-field="series_name">
-        <input value="${img.author || ""}" data-field="author">
-        <input value="${img.description || ""}" data-field="description">
+        <img class="thumb" src="/api/images/${img.id}/thumb"
+             loading="lazy" width="28" height="28" alt="thumbnail">
+        <input value="${escapeHtml(img.image_name  || "")}" data-field="image_name">
+        <input value="${escapeHtml(img.series_name || "")}" data-field="series_name">
+        <input value="${escapeHtml(img.author      || "")}" data-field="author">
+        <input value="${escapeHtml(img.description || "")}" data-field="description">
         <div class="row-actions">
           <button data-save>Save</button>
-          <button data-delete>Delete</button>
+          <button data-delete class="danger">Delete</button>
         </div>
       `;
 
       row.onmouseenter = () => {
-        previewImage.src = `/api/images/${img.id}/data`;
-        previewImage.style.display = "block";
+        previewImage.src             = `/api/images/${img.id}/data`;
+        previewImage.style.display   = "block";
         previewPlaceholder.style.display = "none";
       };
 
       row.querySelector("[data-save]").onclick = async (e) => {
         e.stopPropagation();
         const fd = new FormData();
-        row.querySelectorAll("input").forEach(i => fd.append(i.dataset.field, i.value));
-        await fetch(`/api/images/${img.id}`, { method: "PUT", body: fd });
+        row.querySelectorAll("input").forEach((input) => {
+          fd.append(input.dataset.field, input.value);
+        });
+
+        try {
+          const res  = await fetch(`/api/images/${img.id}`, { method: "PUT", body: fd });
+          const json = await res.json();
+
+          if (!res.ok) { viewStatusEl.innerText = json.detail || "Failed to update image"; return; }
+
+          img.image_name  = row.querySelector('[data-field="image_name"]').value;
+          img.series_name = row.querySelector('[data-field="series_name"]').value;
+          img.author      = row.querySelector('[data-field="author"]').value;
+          img.description = row.querySelector('[data-field="description"]').value;
+
+          viewStatusEl.innerText = `Updated image ${img.id}`;
+        } catch {
+          viewStatusEl.innerText = "Update request failed.";
+        }
       };
 
       row.querySelector("[data-delete]").onclick = async (e) => {
         e.stopPropagation();
-        if (!confirm("Delete image?")) return;
-        await fetch(`/api/images/${img.id}`, { method: "DELETE" });
-        images = images.filter(i => i.id !== img.id);
-        renderPage();
+        if (!confirm(`Delete image "${img.image_name || img.id}"?`)) return;
+
+        try {
+          const res  = await fetch(`/api/images/${img.id}`, { method: "DELETE" });
+          const json = await res.json();
+
+          if (!res.ok) { viewStatusEl.innerText = json.detail || "Failed to delete image"; return; }
+
+          images = images.filter((i) => i.id !== img.id);
+          renderPage();
+          viewStatusEl.innerText = `Deleted image ${img.id}`;
+        } catch {
+          viewStatusEl.innerText = "Delete request failed.";
+        }
       };
 
       body.appendChild(row);
     });
 
     document.getElementById("pageInfo").innerText =
-      `Page ${page + 1} of ${Math.max(Math.ceil(images.length / PAGE_SIZE), 1)}`;
+      hasMore ? `Page ${page + 1}` : `Page ${page + 1} (last page)`;
   }
 
+  // ── Pagination ───────────────────────────────────────────────────────────
+  // FIX: these were incorrectly nested inside renderPage() before
+
   document.getElementById("prevBtn").onclick = () => {
-    if (page > 0) { page--; renderPage(); }
+    if (page > 0) { page--; loadImages(); }
   };
 
   document.getElementById("nextBtn").onclick = () => {
-    if ((page + 1) * PAGE_SIZE < images.length) {
-      page++;
+    if (hasMore) { page++; loadImages(); }
+  };
+
+  // ── Delete all ───────────────────────────────────────────────────────────
+  // FIX: this was incorrectly nested inside renderPage() before
+
+  deleteAllBtn.onclick = async () => {
+    if (!confirm("Are you sure you want to delete ALL images?\n\nThis cannot be undone.")) return;
+
+    deleteAllBtn.disabled  = true;
+    viewStatusEl.innerText = "Deleting all images...";
+
+    try {
+      const res  = await fetch("/api/images/all", { method: "DELETE" });
+      const json = await res.json();
+
+      if (!res.ok) { viewStatusEl.innerText = json.detail || "Failed to delete all images"; return; }
+
+      images = [];
+      page   = 0;
       renderPage();
+      viewStatusEl.innerText = `Deleted ${json.deleted_count} images successfully.`;
+    } catch {
+      viewStatusEl.innerText = "Request failed while deleting all images.";
+    } finally {
+      deleteAllBtn.disabled = false;
     }
   };
+
+  // ── Helpers ──────────────────────────────────────────────────────────────
+
+  function escapeHtml(value) {
+    return String(value)
+      .replaceAll("&",  "&amp;")
+      .replaceAll("<",  "&lt;")
+      .replaceAll(">",  "&gt;")
+      .replaceAll('"',  "&quot;")
+      .replaceAll("'",  "&#039;");
+  }
 </script>
 
 </body>
