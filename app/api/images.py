@@ -6,6 +6,7 @@ from app.auth import admin_auth
 from app.services.image_service import (
     create_image,
     list_images,
+    list_series,
     get_image_data,
     get_image_thumb,
     random_images,
@@ -35,11 +36,17 @@ async def upload_image(
 @router.get("")
 def fetch_images(
     series_name: str | None = None,
+    author: str | None = None,
     limit: int | None = 20,
     offset: int = 0,
     db: Session = Depends(get_db),
 ):
-    return list_images(db, series_name, limit, offset)
+    return list_images(db, series_name, author, limit, offset)
+
+
+@router.get("/series")
+def fetch_series(db: Session = Depends(get_db)):
+    return list_series(db)
 
 
 @router.get("/random")

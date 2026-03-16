@@ -439,6 +439,9 @@
 
   // ── Render page ──────────────────────────────────────────────────────────
 
+  let _previewTimer  = null;
+  let _previewingId  = null;
+
   function renderPage() {
     const body               = document.getElementById("tableBody");
     const previewImage       = document.getElementById("previewImage");
@@ -466,10 +469,25 @@
       `;
 
       row.onmouseenter = () => {
-        previewImage.src             = `/api/images/${img.id}/data`;
-        previewImage.style.display   = "block";
+        clearTimeout(_previewTimer);
+
+        // Show the already-cached thumbnail instantly — no new request
+        if (_previewingId !== img.id) {
+          previewImage.src = `/api/images/${img.id}/thumb`;
+        }
+        previewImage.style.display       = "block";
         previewPlaceholder.style.display = "none";
+
+        // Upgrade to full image only after lingering 300ms
+        _previewTimer = setTimeout(() => {
+          if (_previewingId !== img.id) {
+            previewImage.src = `/api/images/${img.id}/data`;
+            _previewingId    = img.id;
+          }
+        }, 300);
       };
+
+      row.onmouseleave = () => clearTimeout(_previewTimer);
 
       row.querySelector("[data-save]").onclick = async (e) => {
         e.stopPropagation();

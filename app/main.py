@@ -3,26 +3,20 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-# Explicitly load .env from the project root (one level above this file)
-_env_path = Path(__file__).resolve().parent.parent / ".env"
-load_dotenv(dotenv_path=_env_path)
-
-print("ENV PATH:", _env_path)
-print("ADMIN_USER:", os.getenv("ADMIN_USER"))
-print("ADMIN_PASSWORD:", os.getenv("ADMIN_PASSWORD"))
+load_dotenv(dotenv_path=Path(__file__).resolve().parent.parent / ".env")
 
 from fastapi import FastAPI, Depends, Form, Response
 from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.api import images
-from app.db.database import engine
+from app.db.database import engine, run_migrations
 from app.db.models import Base
 from app.auth import admin_auth
 
 Base.metadata.create_all(bind=engine)
+run_migrations()
 
-# Absolute path to app/static - works regardless of where uvicorn is run from
 STATIC_DIR = Path(__file__).resolve().parent / "static"
 
 app = FastAPI()
@@ -31,9 +25,24 @@ app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 app.include_router(images.router, prefix="/api")
 
 
-@app.get("/")
+@app.get("/health")
 def health():
     return {"status": "ok"}
+
+
+@app.get("/")
+def gallery_landing():
+    return FileResponse(str(STATIC_DIR / "index.html"))
+
+
+@app.get("/browse")
+def gallery_browse():
+    return FileResponse(str(STATIC_DIR / "browse.html"))
+
+
+@app.get("/series")
+def gallery_series():
+    return FileResponse(str(STATIC_DIR / "series.html"))
 
 
 @app.get("/login")
@@ -52,12 +61,7 @@ def login(
 
     if username == correct_user and password == correct_pass:
         resp = RedirectResponse(url="/admin", status_code=302)
-        resp.set_cookie(
-            "admin_session",
-            "authenticated",
-            httponly=True,
-            samesite="strict",
-        )
+        resp.set_cookie("admin_session", "authenticated", httponly=True, samesite="strict")
         return resp
 
     return RedirectResponse(url="/login?error=1", status_code=302)
