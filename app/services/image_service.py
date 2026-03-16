@@ -63,10 +63,22 @@ def _generate_thumbnail(data: bytes) -> bytes:
     try:
         with PILImage.open(io.BytesIO(data)) as img:
             img = ImageOps.exif_transpose(img)
+
+            # Preserve ICC profile so the thumbnail renders with the same
+            # color appearance as the original (Display P3, Adobe RGB, etc.)
+            icc = img.info.get("icc_profile")
+
+            # WebP requires RGB or RGBA — convert CMYK, palette, greyscale, etc.
+            if img.mode in ("RGBA", "LA") or (img.mode == "P" and "transparency" in img.info):
+                img = img.convert("RGBA")
+            elif img.mode != "RGB":
+                img = img.convert("RGB")
+
             img.thumbnail(THUMBNAIL_SIZE)
             out = io.BytesIO()
             # method=4 is a good speed/quality balance (method=6 is slowest)
-            img.save(out, format=THUMBNAIL_FORMAT, quality=THUMBNAIL_QUALITY, method=4)
+            img.save(out, format=THUMBNAIL_FORMAT, quality=THUMBNAIL_QUALITY, method=4,
+                     icc_profile=icc)
             return out.getvalue()
     except UnidentifiedImageError:
         raise HTTPException(status_code=400, detail="Unsupported or invalid image file")
@@ -259,37 +271,27 @@ async def create_images_bulk(db: Session, images, base_name, series_name, author
     else:
         base_name = normalize(base_name)
 
-    # Read all files before any processing
-    payloads = []
+    # Process one image at a time: read → thumbnail → write → free.
+    # Reading all files into memory before processing would hold every image's
+    # bytes simultaneously; on a 1 GB VM that causes OOM or a proxy timeout.
+    img_objs = []
     for index, image in enumerate(images, start=1):
         data = await image.read()
         if not data:
             raise HTTPException(status_code=400, detail=f"Empty file at index {index}")
-        payloads.append(data)
 
-    # Process thumbnails with bounded concurrency to cap memory usage.
-    # Running all PIL tasks at once on a single-CPU VM spikes RAM and can
-    # exceed the proxy's 60s timeout; a semaphore of 4 keeps throughput high
-    # while bounding peak memory to ~4 images in-flight at once.
-    _sem = asyncio.Semaphore(4)
+        file_name    = str(uuid.uuid4())
+        content_type = _detect_content_type(data)
+        await asyncio.to_thread(_save_to_disk, data, file_name)
 
-    async def _process(data: bytes, image_name: str) -> Image:
-        async with _sem:
-            file_name    = str(uuid.uuid4())
-            content_type = _detect_content_type(data)
-            await asyncio.to_thread(_save_to_disk, data, file_name)
-            return Image(
-                image_name=image_name,
-                content_type=content_type,
-                file_name=file_name,
-                series_name=series_name,
-                author=author,
-                description=description,
-            )
-
-    img_objs = await asyncio.gather(
-        *[_process(data, f"{base_name}-{i}") for i, data in enumerate(payloads, start=1)]
-    )
+        img_objs.append(Image(
+            image_name=f"{base_name}-{index}",
+            content_type=content_type,
+            file_name=file_name,
+            series_name=series_name,
+            author=author,
+            description=description,
+        ))
 
     for img in img_objs:
         db.add(img)
